@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  namespace: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wordpress
+  template:
+    metadata:
+      labels:
+        app: wordpress
+    spec:
+      containers:
+      - name: wordpress
+        imagePullPolicy: Always
+        image: tomyhp/wordpress:branch-appversion
+        ports:
+        - containerPort: 80
+        env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-secret
+                  key: DB_USER
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-secret
+                  key: DB_PASS
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-secret
+                  key: DB_HOST
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: wordpress-secret
+                  key: DB_NAME                                    
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wordpress
+  namespace: production
+spec:
+  #type: LoadBalancer
+  ports:
+    - port: 80
+      #nodePort: 30080
+  selector:
+    app: wordpress
+
