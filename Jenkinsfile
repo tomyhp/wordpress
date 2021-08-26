@@ -4,7 +4,7 @@ pipeline {
         stage ('Build wordpress') {
             steps {
                 sh '''
-                    sudo docker build -t tomyhp/wordpress:$GIT_BRANCH-$BUILD_ID -f worpress/Dockerfile .
+                    sudo docker build -t tomyhp/wordpress:$GIT_BRANCH-$BUILD_ID -f wordpress/Dockerfile .
                     sudo docker login -u tomyhp -p$DOCKER_TOKEN
                     sudo docker push tomyhp/wordpress:$GIT_BRANCH-$BUILD_ID
                 '''
