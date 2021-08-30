@@ -1,12 +1,12 @@
 pipeline {
     agent any
     stages {
-        stage ('Build landingpage') {
+        stage ('Build wordpress') {
             steps {
                 sh '''
-                    sudo docker build -t tomyhp/landing-page:$GIT_BRANCH-$BUILD_ID -f landing/Dockerfile .
+                    sudo docker build -t tomyhp/wordpress:$GIT_BRANCH-$BUILD_ID -f wordpress/Dockerfile .
                     sudo docker login -u tomyhp -p$DOCKER_TOKEN
-                    sudo docker push tomyhp/landing-page:$GIT_BRANCH-$BUILD_ID
+                    sudo docker push tomyhp/wordpress:$GIT_BRANCH-$BUILD_ID
                 '''
                 }
             }
@@ -17,8 +17,8 @@ pipeline {
                 script {
 		        if (BRANCH_NAME == 'main'){
                 sh '''
-                    sed -i -e "s/branch/$GIT_BRANCH/" Kube-production/landing-page/landing-page-deployment.yml
-                    sed -i -e "s/appversion/$BUILD_ID/" Kube-production/landing-page/landing-page-deployment.yml
+                    sed -i -e "s/branch/$GIT_BRANCH/" Kube-production/wordpress/wordpress-deployment.yml
+                    sed -i -e "s/appversion/$BUILD_ID/" Kube-production/wordpress/wordpress-deployment.yml
                     tar -czvf manifest-production.tar.gz Kube-production/*
                 '''
                 sshPublisher(
@@ -35,8 +35,8 @@ pipeline {
                 } 
                 else {
                 sh '''
-                    sed -i -e "s/branch/$GIT_BRANCH/" Kube-staging/landing-page/landing-page-deployment.yml
-                    sed -i -e "s/appversion/$BUILD_ID/" Kube-staging/landing-page/landing-page-deployment.yml
+                    sed -i -e "s/branch/$GIT_BRANCH/" Kube-staging/wordpress/wordpress-deployment.yml
+                    sed -i -e "s/appversion/$BUILD_ID/" Kube-staging/wordpress/wordpress-deployment.yml
                     tar -czvf manifest-staging.tar.gz Kube-staging/*
                 '''
                 sshPublisher(
@@ -62,7 +62,8 @@ pipeline {
                 sshagent(credentials : ['kube-master-tomy']){
                     sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id tar -xvzf jenkins/manifest-staging.tar.gz'
                     sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-staging/namespace'
-                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-staging/landing-page'
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-staging/wordpress'
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-staging/ingress-nginx'
                 }
             }
         }    
@@ -72,7 +73,7 @@ pipeline {
                 sshagent(credentials : ['kube-master-tomy']){
                     sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id tar -xvzf jenkins/manifest-production.tar.gz'
                     sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-production/namespace'
-                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-production/landing-page'
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-production/wordpress'
                     sh 'ssh -o StrictHostKeyChecking=no ubuntu@api.lopunya.id kubectl apply -f /home/ubuntu/Kube-production/ingress-nginx'
                 }
             }
